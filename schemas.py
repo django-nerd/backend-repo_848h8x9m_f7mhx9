@@ -1,48 +1,78 @@
 """
-Database Schemas
+SAKSHAM PRAVESH Database Schemas
 
-Define your MongoDB collection schemas here using Pydantic models.
-These schemas are used for data validation in your application.
-
-Each Pydantic model represents a collection in your database.
-Model name is converted to lowercase for the collection name:
-- User -> "user" collection
-- Product -> "product" collection
-- BlogPost -> "blogs" collection
+Each Pydantic model corresponds to a MongoDB collection. The collection name is the lowercase of the class name.
 """
-
-from pydantic import BaseModel, Field
-from typing import Optional
-
-# Example schemas (replace with your own):
+from pydantic import BaseModel, Field, EmailStr
+from typing import Optional, List
+from datetime import datetime
 
 class User(BaseModel):
-    """
-    Users collection schema
-    Collection name: "user" (lowercase of class name)
-    """
     name: str = Field(..., description="Full name")
-    email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
-    age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
-    is_active: bool = Field(True, description="Whether user is active")
+    email: EmailStr = Field(..., description="Email address")
+    phone: Optional[str] = Field(None, description="Phone number")
+    password_hash: Optional[str] = Field(None, description="Hashed password")
+    role: str = Field("user", description="Role: user/admin")
+    is_verified: bool = Field(False, description="Whether OTP/email verified")
 
-class Product(BaseModel):
-    """
-    Products collection schema
-    Collection name: "product" (lowercase of class name)
-    """
-    title: str = Field(..., description="Product title")
-    description: Optional[str] = Field(None, description="Product description")
-    price: float = Field(..., ge=0, description="Price in dollars")
-    category: str = Field(..., description="Product category")
-    in_stock: bool = Field(True, description="Whether product is in stock")
+class OTPRequest(BaseModel):
+    channel: str = Field(..., description="email or phone")
+    target: str = Field(..., description="email address or phone number")
+    code: str = Field(..., description="6-digit code")
+    purpose: str = Field(..., description="signup, login, booking")
+    expires_at: datetime = Field(...)
+    verified: bool = Field(False)
 
-# Add your own schemas here:
-# --------------------------------------------------
+class Lead(BaseModel):
+    name: str
+    email: EmailStr
+    phone: Optional[str] = None
+    source: Optional[str] = Field("website", description="utm/source")
+    message: Optional[str] = None
+    status: str = Field("new", description="new, contacted, converted, lost")
 
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+class Appointment(BaseModel):
+    user_email: Optional[EmailStr] = None
+    name: str
+    phone: Optional[str] = None
+    package_id: Optional[str] = None
+    date: str = Field(..., description="YYYY-MM-DD")
+    time: str = Field(..., description="HH:MM")
+    notes: Optional[str] = None
+    status: str = Field("pending", description="pending, confirmed, completed, cancelled")
+
+class Package(BaseModel):
+    slug: str
+    title: str
+    description: str
+    features: List[str] = []
+    price_inr: int
+    is_popular: bool = False
+
+class BlogPost(BaseModel):
+    title: str
+    slug: str
+    excerpt: Optional[str] = None
+    content: str
+    author: str = "Shreyash Suryawanshi"
+    tags: List[str] = []
+    published: bool = True
+    published_at: Optional[datetime] = None
+
+class Testimonial(BaseModel):
+    name: str
+    title: Optional[str] = None
+    quote: str
+
+class ContactMessage(BaseModel):
+    name: str
+    email: EmailStr
+    phone: Optional[str] = None
+    subject: str
+    message: str
+
+class Upload(BaseModel):
+    user_email: Optional[EmailStr] = None
+    filename: str
+    url: str
+    purpose: Optional[str] = None
